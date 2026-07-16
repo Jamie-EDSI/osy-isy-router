@@ -24,26 +24,68 @@ If both are true, the row is a match.
 
 ## How columns map over to the Caseload tab
 
-Only these fields have a matching column in Caseload, so only these are
-copied. Everything else on a new row (App ID, Exit Date, PWE Placed, etc.)
-is left blank for you to fill in later:
+This is the definitive field list (Case Tracker columns A, D, F, G, I, J,
+K, L, M, O, P, R, S, T, U). Ten of them already have a matching column in
+Caseload; the other five don't, so the app adds brand-new columns for
+them at the end of the Caseload tab, using the same label as in the Case
+Tracker:
 
-| Case Tracker column | → | Caseload column |
-|---|---|---|
-| State ID | → | State ID |
-| Last Name | → | Last Name |
-| First Name | → | First Name |
-| Office | → | Office |
-| Case Manager | → | Case Manager from PWE, S & C list |
-| Assign Date | → | Date Assigned |
-| Sign Due | → | Signature Due |
-| Sign Date | → | Sign Date |
-| Status | → | Status |
-| Notes | → | Notes |
+| Case Tracker column | Field | → | Caseload column |
+|---|---|---|---|
+| A | Eli Spec. | → | *(new column added)* |
+| D | State ID | → | State ID |
+| F | Case Manager | → | Case Manager from PWE, S & C list |
+| G | Assess Date | → | *(new column added)* |
+| I | Last Name | → | Last Name |
+| J | First Name | → | First Name |
+| K | Office | → | Office |
+| L | Assign Date | → | Date Assigned |
+| M | Fund | → | *(new column added)* |
+| O | Status | → | Status |
+| P | Notes | → | Notes |
+| R | Complete Date | → | *(new column added)* |
+| S | Sign Due | → | Signature Due |
+| T | Sign Date | → | Sign Date |
+| U | PWE | → | *(new column added)* |
 
-If you ever rename a column in either file and the app can't find a match,
-it'll show a warning banner telling you which field it couldn't map — open
-`lib/caseRouter.js` and adjust the `targetMatch` line for that field.
+Every other existing Caseload column (App ID, Exit Date, PWE Placed,
+etc.) is left blank on new rows.
+
+If you ever need to change which columns are pulled from the Case
+Tracker, this whole mapping lives in one place: the `FIELD_MAP` array
+near the top-middle of `lib/caseRouter.js`.
+
+## Two ways to get the new rows in
+
+After reviewing matches, you get two download buttons:
+
+- **Download updated Caseload file** — a complete copy of your Caseload
+  file with the new rows already appended to the Caseload tab and
+  highlighted in yellow so they're easy to find, plus any new columns
+  added at the end for fields that didn't already have a home. Rename it
+  to replace your original and you're done. Built by editing only the
+  internal XML for the Caseload tab and its styles inside the .xlsx
+  (which is a zip file under the hood) and leaving every other tab
+  byte-for-byte untouched — it never fully parses or rewrites the whole
+  workbook, so it stays fast and doesn't risk the formatting on the huge
+  "Data" tabs.
+- **Download new rows only** — just the new rows by themselves, useful as
+  a backup record of exactly what was added, or if you'd rather paste
+  them in by hand.
+
+New rows land right after your real data, not after any blank spacer
+rows. Some sheets like this one have a block of pre-formatted blank rows
+sitting at the bottom (leftover room from however the sheet was set up).
+Rather than appending after all of them, the app finds the actual last
+row with real data and reuses the blank rows immediately after it,
+filling them in with the new data in place. If you ever add more new
+rows in one run than there are blank rows left, the extra ones get
+appended past the end like normal.
+
+New rows copy their cell formatting (borders, shading, date formats) from
+the nearest existing row above that actually has a value in that column —
+not just literally the last row, since the last row or two can be a
+mostly-empty placeholder that wouldn't have the right date formatting.
 
 ## Why the app only reads the "Caseload" tab from HCGY_Caseload.xlsx
 
@@ -145,4 +187,3 @@ lib/
 
 If the spreadsheet layouts change in the future, `lib/caseRouter.js` is
 almost always the only file you'll need to edit.
-# osy-isy-router
