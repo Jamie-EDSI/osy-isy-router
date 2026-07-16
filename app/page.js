@@ -86,6 +86,8 @@ export default function Home() {
   // ---- Results ----------------------------------------------------
   const [results, setResults] = useState(null); // null = not run yet
   const [missingTargets, setMissingTargets] = useState([]);
+  const [outputHeader, setOutputHeader] = useState(null);
+  const [newFieldStartIdx, setNewFieldStartIdx] = useState(0);
 
   // ---- UI state -----------------------------------------------------
   const [busy, setBusy] = useState(false);
@@ -138,7 +140,7 @@ export default function Home() {
     setError("");
     setBusy(true);
     try {
-      const { results, missingTargets } = await filterAndMapRows({
+      const { results, missingTargets, outputHeader, newFieldStartIdx } = await filterAndMapRows({
         workbook: trackerWorkbook,
         tabNames: selectedTabs,
         caseloadHeader,
@@ -146,6 +148,8 @@ export default function Home() {
       });
       setResults(results);
       setMissingTargets(missingTargets);
+      setOutputHeader(outputHeader);
+      setNewFieldStartIdx(newFieldStartIdx);
     } catch (err) {
       setError(err.message || "Something went wrong while filtering.");
     } finally {
@@ -172,7 +176,7 @@ export default function Home() {
     const selected = results.filter((r) => r.included);
     if (selected.length === 0) return;
     const stamp = new Date().toISOString().slice(0, 10);
-    await downloadNewRowsWorkbook(caseloadHeader, selected, `New_Rows_to_Add_${stamp}.xlsx`);
+    await downloadNewRowsWorkbook(outputHeader, selected, `New_Rows_to_Add_${stamp}.xlsx`);
   };
 
   const handleDownloadFullFile = async () => {
@@ -183,7 +187,13 @@ export default function Home() {
     try {
       const stamp = new Date().toISOString().slice(0, 10);
       const baseName = caseloadFile.name.replace(/\.xlsx$/i, "");
-      await buildUpdatedCaseloadWorkbook(caseloadFile, selected, `${baseName}_updated_${stamp}.xlsx`);
+      await buildUpdatedCaseloadWorkbook(
+        caseloadFile,
+        selected,
+        outputHeader,
+        newFieldStartIdx,
+        `${baseName}_updated_${stamp}.xlsx`
+      );
     } catch (err) {
       setError(err.message || "Couldn't build the updated Caseload file.");
     } finally {
@@ -391,8 +401,11 @@ export default function Home() {
           </div>
           <p className="mt-2 text-xs text-ink-soft">
             <strong>Updated Caseload file</strong>: a complete, ready-to-use copy of your Caseload
-            file with the new rows already added &mdash; rename it to replace your original.
-            Every other tab is left byte-for-byte untouched.
+            file with the new rows already added and highlighted in yellow so they're easy to
+            spot &mdash; rename it to replace your original. Every other tab is left
+            byte-for-byte untouched. If any of the carried-over fields don&apos;t already have a
+            column (Eli Spec., Assess Date, Fund, Complete Date, PWE), new columns are added for
+            them at the end of the sheet.
             <br />
             <strong>New rows only</strong>: just the new rows, for pasting in yourself or keeping
             as a record of what was added.
