@@ -6,6 +6,7 @@ import {
   readCaseloadSheet,
   filterAndMapRows,
   downloadNewRowsWorkbook,
+  buildUpdatedCaseloadWorkbook,
 } from "@/lib/caseRouter";
 
 // Small helper so date-ish cells display nicely in the preview table
@@ -60,6 +61,7 @@ function FileDropCard({ title, hint, file, onFile, accept = ".xlsx" }) {
         onChange={(e) => handleFiles(e.target.files)}
       />
       <div className="font-display text-sm font-semibold text-ink">{title}</div>
+      <p className="mt-1 text-sm text-ink-soft">{hint}</p>
       {file ? (
         <div className="mt-3 inline-flex items-center gap-2 rounded-md bg-teal-tint px-3 py-1.5 text-sm font-medium text-teal-dark">
           <span className="font-mono">{file.name}</span>
@@ -77,6 +79,7 @@ export default function Home() {
   const [trackerWorkbook, setTrackerWorkbook] = useState(null);
   const [monthlyTabs, setMonthlyTabs] = useState([]);
   const [selectedTabs, setSelectedTabs] = useState([]);
+  const [defaultTab, setDefaultTab] = useState(null);
 
   // ---- File 2: Caseload --------------------------------------------
   const [caseloadFile, setCaseloadFile] = useState(null);
@@ -102,6 +105,7 @@ export default function Home() {
       setTrackerWorkbook(workbook);
       setMonthlyTabs(monthlyTabs);
       setSelectedTabs([latestTab]);
+      setDefaultTab(latestTab);
       setResults(null);
     } catch (err) {
       setError(err.message || "Couldn't read that Case Tracker file.");
@@ -174,6 +178,22 @@ export default function Home() {
     await downloadNewRowsWorkbook(caseloadHeader, selected, `New_Rows_to_Add_${stamp}.xlsx`);
   };
 
+  const handleDownloadFullFile = async () => {
+    const selected = results.filter((r) => r.included);
+    if (selected.length === 0 || !caseloadFile) return;
+    setError("");
+    setBusy(true);
+    try {
+      const stamp = new Date().toISOString().slice(0, 10);
+      const baseName = caseloadFile.name.replace(/\.xlsx$/i, "");
+      await buildUpdatedCaseloadWorkbook(caseloadFile, selected, `${baseName}_updated_${stamp}.xlsx`);
+    } catch (err) {
+      setError(err.message || "Couldn't build the updated Caseload file.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
       {/* ---- Header / routing slip title block ---- */}
@@ -203,10 +223,11 @@ export default function Home() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <StepBadge n={1} done={!!trackerWorkbook} />
-            <span className="font-display text-sm font-semibold text-ink">File Upload - Source</span>
+            <span className="font-display text-sm font-semibold text-ink">Case Tracker file</span>
           </div>
           <FileDropCard
-            title="Upload source file here"
+            title="1_Case_Tracker_PY2026.xlsx"
+            hint="The file with the monthly tabs (e.g. 2026.07) and Status / Fund columns."
             file={trackerFile}
             onFile={handleTrackerFile}
           />
@@ -214,10 +235,11 @@ export default function Home() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <StepBadge n={2} done={!!caseloadHeader} />
-            <span className="font-display text-sm font-semibold text-ink">File Upload - Caseload/Merge</span>
+            <span className="font-display text-sm font-semibold text-ink">Caseload file</span>
           </div>
           <FileDropCard
-            title="Upload file to merge to"
+            title="HCGY_Caseload.xlsx"
+            hint="The larger file. Only the Caseload tab is read; the rest is left untouched."
             file={caseloadFile}
             onFile={handleCaseloadFile}
           />
@@ -253,8 +275,8 @@ export default function Home() {
               })}
             </div>
             <p className="mt-3 text-xs text-ink-soft">
-              Defaults to the most recent tab ({monthlyTabs[monthlyTabs.length - 1]}). Click to
-              add or remove tabs from the scan.
+              Defaults to the most recent tab with data ({defaultTab}). Click to add or remove
+              tabs from the scan.
             </p>
             <button
               onClick={runFilter}
@@ -356,16 +378,29 @@ export default function Home() {
             </div>
           )}
 
-          <button
-            onClick={handleDownload}
-            disabled={selectedCount === 0}
-            className="mt-5 rounded-md bg-teal px-5 py-2.5 font-display text-sm font-semibold text-white transition-opacity disabled:opacity-40"
-          >
-            Download {selectedCount || ""} new row{selectedCount === 1 ? "" : "s"} (.xlsx)
-          </button>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              onClick={handleDownloadFullFile}
+              disabled={selectedCount === 0 || busy}
+              className="rounded-md bg-teal px-5 py-2.5 font-display text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+            >
+              {busy ? "Building…" : `Download updated Caseload file (${selectedCount} new)`}
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={selectedCount === 0}
+              className="rounded-md border border-ink bg-panel px-5 py-2.5 font-display text-sm font-semibold text-ink transition-opacity disabled:opacity-40"
+            >
+              Download new rows only (backup copy)
+            </button>
+          </div>
           <p className="mt-2 text-xs text-ink-soft">
-            Open the download, select the data rows, copy, then in HCGY_Caseload.xlsx go to the
-            Caseload tab, click the first empty row, and Paste Special &rarr; Values.
+            <strong>Updated Caseload file</strong>: a complete, ready-to-use copy of your Caseload
+            file with the new rows already added &mdash; rename it to replace your original.
+            Every other tab is left byte-for-byte untouched.
+            <br />
+            <strong>New rows only</strong>: just the new rows, for pasting in yourself or keeping
+            as a record of what was added.
           </p>
         </section>
       )}
