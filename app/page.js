@@ -60,7 +60,6 @@ function FileDropCard({ title, hint, file, onFile, accept = ".xlsx" }) {
         onChange={(e) => handleFiles(e.target.files)}
       />
       <div className="font-display text-sm font-semibold text-ink">{title}</div>
-      <p className="mt-1 text-sm text-ink-soft">{hint}</p>
       {file ? (
         <div className="mt-3 inline-flex items-center gap-2 rounded-md bg-teal-tint px-3 py-1.5 text-sm font-medium text-teal-dark">
           <span className="font-mono">{file.name}</span>
@@ -204,11 +203,10 @@ export default function Home() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <StepBadge n={1} done={!!trackerWorkbook} />
-            <span className="font-display text-sm font-semibold text-ink">Case Tracker file</span>
+            <span className="font-display text-sm font-semibold text-ink">File Upload - Source</span>
           </div>
           <FileDropCard
-            title="1_Case_Tracker_PY2026.xlsx"
-            hint="The file with the monthly tabs (e.g. 2026.07) and Status / Fund columns."
+            title="Upload source file here"
             file={trackerFile}
             onFile={handleTrackerFile}
           />
@@ -216,11 +214,10 @@ export default function Home() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <StepBadge n={2} done={!!caseloadHeader} />
-            <span className="font-display text-sm font-semibold text-ink">Caseload file</span>
+            <span className="font-display text-sm font-semibold text-ink">File Upload - Caseload/Merge</span>
           </div>
           <FileDropCard
-            title="HCGY_Caseload.xlsx"
-            hint="The larger file. Only the Caseload tab is read; the rest is left untouched."
+            title="Upload file to merge to"
             file={caseloadFile}
             onFile={handleCaseloadFile}
           />

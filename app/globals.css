@@ -8,7 +8,7 @@
    duplicate/match callouts.
 ------------------------------------------------------------------------ */
 :root {
-  --paper: #F1F3F0;
+  --paper: #E8F1FA;
   --panel: #FFFFFF;
   --ink: #1B2430;
   --ink-soft: #57626B;
@@ -48,10 +48,6 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body), Arial, Helvetica, sans-serif;
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px);
-  background-size: 100% 40px;
-  background-attachment: local;
 }
 
 /* Rubber-stamp signature element used on duplicate / routed rows */
